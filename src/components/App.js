@@ -32,29 +32,72 @@ class App extends Component {
   async loadBlockchainData() {
     const web3 = window.web3
     //Load accounts
+    const accounts = await web3.eth.getAccounts()
+    console.log(accounts)
     //Add first account the the state
-
+    this.setState({
+      account: accounts[0]
+    })
     //Get network ID
     //Get network data
     //Check if net data exists, then
-    //Assign YouChain contract to a variable
-    //Add YouChain to the state
+    const networkId = await web3.eth.net.getId()
+    const networkData = YouChain.networks[networkId]
+    if (networkData) {
+      console.log(networkData.address);
+      const contract = new web3.eth.Contract(YouChain.abi, networkData.address)
+      //console.log(contract);
+      this.setState({ contract })
 
-    //Check videoAmounts
-    //Add videAmounts to the state
+      //Assign YouChain contract to a variable
+      //Add YouChain to the state
 
-    //Iterate throught videos and add them to the state (by newest)
+      //Check videoAmounts
+      const videoCount = await contract.methods.videoCount().call()
+      //Add videAmounts to the state
+      this.setState({
+        videoCount
+      })
 
 
-    //Set latest video and it's title to view as default 
-    //Set loading state to false
+      //Iterate throught videos and add them to the state (by newest)
+      for (var i = videoCount; i >= 1; i--) {
+        const video = await contract.methods.videos(i).call()
+        this.setState({
+          videos: [...this.state.videos, video]
+        })
+      }
 
-    //If network data doesn't exisits, log error
+      //Set latest video and it's title to view as default 
+      const latest = await contract.methods.videos(videoCount).call()
+      this.setState({
+        currentHash: latest.hash,
+        currentTitle: latest.title
+      })
+      //Set loading state to false
+      this.setState({
+        loading: false
+      })
+
+      //If network data doesn't exisits, log error
+
+
+    } else {
+      window.alert('Contract is not yet deployed')
+    }
   }
 
   //Get video
   captureFile = event => {
+    event.preventDefault()
+    const file = event.target.files[0]
+    const reader = new Window.FileReader()
+    reader.readAsArrayBuffer(file)
 
+    reader.onloadend = () => {
+      this.setState({ buffer: Buffer(reader.result) })
+      console.log('buffer', this.state.buffer)
+    }
   }
 
   //Upload video
@@ -70,8 +113,10 @@ class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      loading: false
+      loading: false,
+      account: '0x0'
       //set states
+
     }
 
     //Bind functions
@@ -81,7 +126,8 @@ class App extends Component {
     return (
       <div>
         <Navbar
-        //Account
+          //Account
+          account={this.state.account}
         />
         { this.state.loading
           ? <div id="loader" className="text-center mt-5"><p>Loading...</p></div>
