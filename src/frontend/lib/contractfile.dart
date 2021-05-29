@@ -34,6 +34,8 @@ class _ContractConnectorState extends State<ContractConnector> {
     httpClient = Client();
     ethClient = Web3Client("HTTP://127.0.0.1:7545", httpClient);
     await getCredentials();
+    vc = await getVideoCount();
+    vc__ = vc - BigInt.from(1);
     //await getName(address);
   }
 
